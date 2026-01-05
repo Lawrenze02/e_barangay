@@ -24,24 +24,26 @@ class DBHelper {
     String path = join(await getDatabasesPath(), 'barangay_scheduler.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    // Users Table
+    
     await db.execute('''
       CREATE TABLE users(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
         username TEXT UNIQUE,
         password TEXT,
-        role TEXT
+        role TEXT,
+        profile_picture TEXT
       )
     ''');
 
-    // Appointments Table
+    
     await db.execute('''
       CREATE TABLE appointments(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,7 +58,7 @@ class DBHelper {
       )
     ''');
 
-    // Announcements Table
+   
     await db.execute('''
       CREATE TABLE announcements(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,16 +68,22 @@ class DBHelper {
       )
     ''');
     
-    // Seed Default Admin
+    
     await db.insert('users', User(
       name: 'Admin Staff',
       username: 'admin',
-      password: 'adminpassword', // In production, hash this
+      password: 'adminpassword', 
       role: 'admin'
     ).toMap());
   }
 
-  // User Helpers
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE users ADD COLUMN profile_picture TEXT');
+    }
+  }
+
+  
   Future<int> insertUser(User user) async {
     Database db = await database;
     return await db.insert('users', user.toMap());
@@ -107,7 +115,17 @@ class DBHelper {
     return null;
   }
 
-  // Appointment Helpers
+  Future<int> updateUserImage(int id, String path) async {
+    Database db = await database;
+    return await db.update(
+      'users',
+      {'profile_picture': path},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  
   Future<int> insertAppointment(Appointment appointment) async {
     Database db = await database;
     return await db.insert('appointments', appointment.toMap());
@@ -134,8 +152,22 @@ class DBHelper {
     Database db = await database;
     List<Map<String, dynamic>> maps = await db.query(
         'appointments',
-        where: 'date = ? AND status != ?',
-        whereArgs: [date, 'rejected'] // Don't count rejected apps as blocking
+        where: 'date = ? AND status != ? AND status != ?',
+        whereArgs: [date, 'rejected', 'cancelled'] // Update to exclude cancelled too
+    );
+    return List.generate(maps.length, (i) => Appointment.fromMap(maps[i]));
+  }
+
+  Future<List<Appointment>> getFutureAppointments() async {
+    Database db = await database;
+    final now = DateTime.now();
+    final todayStr = now.toString().split(' ')[0]; // yyyy-mm-dd
+
+    List<Map<String, dynamic>> maps = await db.query(
+      'appointments',
+      where: 'date >= ? AND status != ? AND status != ?',
+      whereArgs: [todayStr, 'rejected', 'cancelled'],
+      orderBy: 'date ASC, time ASC',
     );
     return List.generate(maps.length, (i) => Appointment.fromMap(maps[i]));
   }
@@ -150,7 +182,11 @@ class DBHelper {
     );
   }
 
-  // Announcement Helpers
+  Future<int> cancelAppointment(int id) async {
+    return await updateAppointmentStatus(id, 'cancelled');
+  }
+
+  
   Future<int> insertAnnouncement(Announcement announcement) async {
     Database db = await database;
     return await db.insert('announcements', announcement.toMap());

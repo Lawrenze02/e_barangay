@@ -5,6 +5,8 @@ import '../services/auth_service.dart';
 import '../data/db_helper.dart';
 import '../models/appointment_model.dart';
 
+import '../utils/time_utils.dart';
+
 class AppointmentRequestScreen extends StatefulWidget {
   const AppointmentRequestScreen({super.key});
 
@@ -89,7 +91,8 @@ class _AppointmentRequestScreenState extends State<AppointmentRequestScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text("Select Service:", style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text("Select Service:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 8),
             DropdownButton<String>(
               value: _selectedService,
               isExpanded: true,
@@ -109,30 +112,65 @@ class _AppointmentRequestScreenState extends State<AppointmentRequestScreen> {
               label: const Text("Ask Gemini AI for Schedule"),
             ),
             if (_generatedSchedule != null) ...[
-              const Divider(height: 32),
-              Card(
-                color: Colors.green.shade50,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+              const SizedBox(height: 16),
+              Expanded(
+                child: SingleChildScrollView(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text("AI Suggested Schedule:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
-                      const SizedBox(height: 8),
-                      Text("Date: ${_generatedSchedule!['date']}", style: const TextStyle(fontSize: 18)),
-                      Text("Time: ${_generatedSchedule!['time']}", style: const TextStyle(fontSize: 18)),
-                      const SizedBox(height: 8),
-                      Text("Note: ${_generatedSchedule!['description']}"),
+                      Card(
+                        color: Colors.green.shade50,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text("AI Suggested Schedule:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  const Icon(Icons.calendar_today, size: 18, color: Colors.green),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text("${_generatedSchedule!['date']}", style: const TextStyle(fontSize: 16)),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.access_time, size: 18, color: Colors.green),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(formatTime(_generatedSchedule!['time']!), style: const TextStyle(fontSize: 16)),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                _generatedSchedule!['description']!,
+                                style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic),
+                                maxLines: 5,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _confirmAppointment,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green, 
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: const Text("Confirm Appointment", style: TextStyle(fontSize: 16)),
+                      ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _confirmAppointment,
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
-                child: const Text("Confirm Appointment"),
-              )
             ]
           ],
         ),

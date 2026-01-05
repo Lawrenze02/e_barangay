@@ -38,6 +38,11 @@ class AuthService with ChangeNotifier {
     }
   }
 
+  void setUser(User user) {
+    _currentUser = user;
+    notifyListeners();
+  }
+
   void logout() {
     _currentUser = null;
     notifyListeners();

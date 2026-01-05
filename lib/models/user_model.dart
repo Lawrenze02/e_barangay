@@ -4,6 +4,7 @@ class User {
   final String username;
   final String password;
   final String role; // 'admin' or 'resident'
+  final String? profilePicture;
 
   User({
     this.id,
@@ -11,6 +12,7 @@ class User {
     required this.username,
     required this.password,
     required this.role,
+    this.profilePicture,
   });
 
   Map<String, dynamic> toMap() {
@@ -20,6 +22,7 @@ class User {
       'username': username,
       'password': password,
       'role': role,
+      'profile_picture': profilePicture,
     };
   }
 
@@ -30,6 +33,7 @@ class User {
       username: map['username'],
       password: map['password'],
       role: map['role'],
+      profilePicture: map['profile_picture'],
     );
   }
 }
